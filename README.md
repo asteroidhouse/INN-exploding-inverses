@@ -2,7 +2,7 @@
 
 This repository contains the code used for the paper [Understanding and mitigating exploding inverses in invertible neural networks](http://arxiv.org/abs/2006.09347).
 
-This code is based on [jhjacobsen/fully-invertible-revnet](https://github.com/jhjacobsen/fully-invertible-revnet), [y0ast/Glow-PyTorch](https://github.com/y0ast/Glow-PyTorch), and [rtqichen/residual-flows](https://github.com/rtqichen/residual-flows).
+This code is based on [jhjacobsen/fully-invertible-revnet](https://github.com/jhjacobsen/fully-invertible-revnet), [y0ast/Glow-PyTorch](https://github.com/y0ast/Glow-PyTorch), [plucas14/pytorch-glow](https://github.com/pclucas14/pytorch-glow), and [rtqichen/residual-flows](https://github.com/rtqichen/residual-flows).
 
 
 ## Requirements
@@ -181,12 +181,12 @@ python train_inn_classifier.py \
 
 If you find this repository useful, please cite:
 
-* `Jens Behrmann*, Paul Vicol*, Kuan-Chieh Wang*, Roger Grosse, Jorn Jacobsen. Understanding and mitigating exploding inverses in invertible neural networks, 2020.`
+* `Jens Behrmann*, Paul Vicol*, Kuan-Chieh Wang*, Roger Grosse, Jörn-Henrik Jacobsen. Understanding and mitigating exploding inverses in invertible neural networks, 2020.`
 
 ```
 @article{innexploding2020,
   title={Understanding and mitigating exploding inverses in invertible neural networks},
-  author={Jens Behrmann and Paul Vicol and Kuan-Chieh Wang and Roger Grosse and Jorn Jacobsen},
+  author={Jens Behrmann and Paul Vicol and Kuan-Chieh Wang and Roger Grosse and Jörn-Henrik Jacobsen},
   journal={arXiv preprint arXiv:2006.09347},
   year={2020}
 }
