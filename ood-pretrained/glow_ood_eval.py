@@ -109,14 +109,17 @@ def compute_total_recons_error(dataloader, name):
     return all_recons_errors
 
 
-num_noise_datapoints = 32
+# minibatch_size = 32
+minibatch_size = 25
+num_batches = 400
 
 # Gaussian
 gaussian_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('Gaussian batch {}'.format(batch_num))
     with torch.no_grad():
-        gaussian_data = np.clip(.5 + np.random.normal(size=(num_noise_datapoints, 3, 32, 32)), a_min=-0.49, a_max=0.49)
+        # gaussian_data = np.clip(.5 + np.random.normal(size=(minibatch_size, 3, 32, 32)), a_min=-0.49, a_max=0.49)
+        gaussian_data = np.clip(np.random.normal(size=(minibatch_size, 3, 32, 32)), a_min=-0.49, a_max=0.49)
         gaussian_data = torch.from_numpy(gaussian_data).float()
         gaussian_data = gaussian_data.cuda()
         zn = []
@@ -127,14 +130,26 @@ for batch_num in range(50):
     save_samples(recons, 'gaussian_recons')
 print('Gaussian rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(gaussian_recons_errs), np.min(gaussian_recons_errs), np.max(gaussian_recons_errs)))
+
+gaussian_recons_errs = np.array(gaussian_recons_errs)
+which_are_inf = np.isinf(gaussian_recons_errs)
+which_are_ok = ~which_are_inf
+ok_values = gaussian_recons_errs[which_are_ok]
+if len(ok_values) > 0:
+    print('Gaussian ok rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
+          np.mean(ok_values), np.min(ok_values), np.max(ok_values)))
+else:
+    print('Gaussian all inf')
+print('Gaussian num inf: {} | num total: {} | proportion inf: {}'.format(
+       np.sum(which_are_inf), len(gaussian_recons_errs), np.sum(which_are_inf).astype(np.float32) / float(len(gaussian_recons_errs))))
 sys.stdout.flush()
 
 # Uniform
 uniform_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('Uniform batch {}'.format(batch_num))
     with torch.no_grad():
-        uniform_data = np.clip(np.random.uniform(size=(num_noise_datapoints, 3, 32, 32)) - 0.5, a_min=-0.49, a_max=0.49)
+        uniform_data = np.clip(np.random.uniform(size=(minibatch_size, 3, 32, 32)) - 0.5, a_min=-0.49, a_max=0.49)
         uniform_data = torch.from_numpy(uniform_data).float()
         uniform_data = uniform_data.cuda()
         zn = []
@@ -145,14 +160,26 @@ for batch_num in range(50):
     save_samples(recons, 'uniform_recons')
 print('Uniform rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(uniform_recons_errs), np.min(uniform_recons_errs), np.max(uniform_recons_errs)))
+
+uniform_recons_errs = np.array(uniform_recons_errs)
+which_are_inf = np.isinf(uniform_recons_errs)
+which_are_ok = ~which_are_inf
+ok_values = uniform_recons_errs[which_are_ok]
+if len(ok_values) > 0:
+    print('Uniform ok rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
+          np.mean(ok_values), np.min(ok_values), np.max(ok_values)))
+else:
+    print('Uniform all inf')
+print('Uniform num inf: {} | num total: {} | proportion inf: {}'.format(
+       np.sum(which_are_inf), len(uniform_recons_errs), np.sum(which_are_inf).astype(np.float32) / float(len(uniform_recons_errs))))
 sys.stdout.flush()
 
 # Rademacher
 rademacher_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('Rademacher batch {}'.format(batch_num))
     with torch.no_grad():
-        rademacher_data = np.clip(np.random.binomial(1, .5, size=(num_noise_datapoints, 3, 32, 32)) - 0.5, a_min=-0.49, a_max=0.49)
+        rademacher_data = np.clip(np.random.binomial(1, .5, size=(minibatch_size, 3, 32, 32)) - 0.5, a_min=-0.49, a_max=0.49)
         rademacher_data = torch.from_numpy(rademacher_data).float()
         rademacher_data = rademacher_data.cuda()
         zn = []
@@ -163,16 +190,28 @@ for batch_num in range(50):
     save_samples(recons, 'rademacher_recons')
 print('Rademacher rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(rademacher_recons_errs), np.min(rademacher_recons_errs), np.max(rademacher_recons_errs)))
+
+rademacher_recons_errs = np.array(rademacher_recons_errs)
+which_are_inf = np.isinf(rademacher_recons_errs)
+which_are_ok = ~which_are_inf
+ok_values = rademacher_recons_errs[which_are_ok]
+if len(ok_values) > 0:
+    print('Rademacher ok rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
+          np.mean(ok_values), np.min(ok_values), np.max(ok_values)))
+else:
+    print('Rademacher all inf')
+print('Rademacher num inf: {} | num total: {} | proportion inf: {}'.format(
+       np.sum(which_are_inf), len(rademacher_recons_errs), np.sum(which_are_inf).astype(np.float32) / float(len(rademacher_recons_errs))))
 sys.stdout.flush()
 
 # Texture OOD Data
 texture_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('Texture batch {}'.format(batch_num))
     with torch.no_grad():
         texture_data = np.clip(torch.load(os.path.join('ood_data/dtd.t7')).numpy() / 255.0 - 0.5, a_min=-0.49, a_max=0.49)
         texture_data = torch.from_numpy(texture_data).float()
-        texture_data = texture_data[batch_num*32:batch_num*32+32].cuda()
+        texture_data = texture_data[batch_num*minibatch_size:batch_num*minibatch_size+minibatch_size].cuda()
         zn = []
         z, zn, nll, y_logits = model(x=texture_data, zn=zn)
         recons = model.reverse_flow(z.detach(), zn=zn, y_onehot=None, temperature=1, no_grad=True)
@@ -181,16 +220,28 @@ for batch_num in range(50):
     save_samples(recons, 'texture_recons')
 print('Texture rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(texture_recons_errs), np.min(texture_recons_errs), np.max(texture_recons_errs)))
+
+texture_recons_errs = np.array(texture_recons_errs)
+which_are_inf = np.isinf(texture_recons_errs)
+which_are_ok = ~which_are_inf
+ok_values = texture_recons_errs[which_are_ok]
+if len(ok_values) > 0:
+    print('Texture ok rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
+          np.mean(ok_values), np.min(ok_values), np.max(ok_values)))
+else:
+    print('Texture all inf')
+print('Texture num inf: {} | num total: {} | proportion inf: {}'.format(
+       np.sum(which_are_inf), len(texture_recons_errs), np.sum(which_are_inf).astype(np.float32) / float(len(texture_recons_errs))))
 sys.stdout.flush()
 
 # Places OOD Data
 places_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('Places batch {}'.format(batch_num))
     with torch.no_grad():
         places_data = np.clip(torch.load(os.path.join('ood_data/places.t7')).numpy() / 255. - 0.5, a_min=-0.49, a_max=0.49)
         places_data = torch.from_numpy(places_data).float()
-        places_data = places_data[batch_num*32:batch_num*32+32].cuda()
+        places_data = places_data[batch_num*minibatch_size:batch_num*minibatch_size+minibatch_size].cuda()
         zn = []
         z, zn, nll, y_logits = model(x=places_data, zn=zn)
         recons = model.reverse_flow(z.detach(), zn=zn, y_onehot=None, temperature=1, no_grad=True)
@@ -199,26 +250,52 @@ for batch_num in range(50):
     save_samples(recons, 'places_recons')
 print('Places rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(places_recons_errs), np.min(places_recons_errs), np.max(places_recons_errs)))
+
+places_recons_errs = np.array(places_recons_errs)
+which_are_inf = np.isinf(places_recons_errs)
+which_are_ok = ~which_are_inf
+ok_values = places_recons_errs[which_are_ok]
+if len(ok_values) > 0:
+    print('Places ok rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
+          np.mean(ok_values), np.min(ok_values), np.max(ok_values)))
+else:
+    print('Places all inf')
+print('Places num inf: {} | num total: {} | proportion inf: {}'.format(
+       np.sum(which_are_inf), len(places_recons_errs), np.sum(which_are_inf).astype(np.float32) / float(len(places_recons_errs))))
 sys.stdout.flush()
 
 
+transform = torchvision.transforms.Compose([torchvision.transforms.Resize(32),
+                                            torchvision.transforms.ToTensor()])
 tim_resize_data = torchvision.datasets.ImageFolder('ood_data/Imagenet_resize', transform=transform)
 tim_resize_data = np.stack([img.numpy() for (img, label) in tim_resize_data])
 
 tim_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('tinyImageNet batch {}'.format(batch_num))
-    tim_resize_data = torch.from_numpy(tim_resize_data[batch_num*32:batch_num*32+32]).float() - 0.5  # To get to the range [-0.5, 0.5]
-    tim_resize_data = tim_resize_data.cuda()
+    tim_resize_minibatch = torch.from_numpy(tim_resize_data[batch_num*minibatch_size:batch_num*minibatch_size+minibatch_size]).float() - 0.5  # To get to the range [-0.5, 0.5]
+    tim_resize_minibatch = tim_resize_minibatch.cuda()
     with torch.no_grad():
         zn = []
-        z, zn, nll, y_logits = model(x=tim_data, zn=zn)
+        z, zn, nll, y_logits = model(x=tim_resize_minibatch, zn=zn)
         recons = model.reverse_flow(z.detach(), zn=zn, y_onehot=None, temperature=1, no_grad=True)
-        tim_recons_errs += [torch.norm(x_hat - x).item() for (x_hat, x) in zip(recons, tim_data)]
-    save_samples(tim_data, 'tim_orig')
+        tim_recons_errs += [torch.norm(x_hat - x).item() for (x_hat, x) in zip(recons, tim_resize_minibatch)]
+    save_samples(tim_resize_minibatch, 'tim_orig')
     save_samples(recons, 'tim_recons')
 print('tinyImageNet rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(tim_recons_errs), np.min(tim_recons_errs), np.max(tim_recons_errs)))
+
+tim_recons_errs = np.array(tim_recons_errs)
+which_are_inf = np.isinf(tim_recons_errs)
+which_are_ok = ~which_are_inf
+ok_values = tim_recons_errs[which_are_ok]
+if len(ok_values) > 0:
+    print('tinyImageNet ok rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
+          np.mean(ok_values), np.min(ok_values), np.max(ok_values)))
+else:
+    print('tinyImageNet all inf')
+print('tinyImageNet num inf: {} | num total: {} | proportion inf: {}'.format(
+       np.sum(which_are_inf), len(tim_recons_errs), np.sum(which_are_inf).astype(np.float32) / float(len(tim_recons_errs))))
 sys.stdout.flush()
 
 

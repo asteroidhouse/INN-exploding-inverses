@@ -47,7 +47,7 @@ def get_CIFAR10(augment, dataroot, download):
 
     one_hot_encode = lambda target: F.one_hot(torch.tensor(target), num_classes)
 
-    path = Path(dataroot) / 'data' / 'CIFAR10'
+    path = Path(dataroot) / 'CIFAR10'
     train_dataset = datasets.CIFAR10(path, train=True,
                                      transform=train_transform,
                                      # target_transform=one_hot_encode,
@@ -75,7 +75,7 @@ def get_SVHN(augment, dataroot, download):
 
     one_hot_encode = lambda target: F.one_hot(torch.tensor(target), num_classes)
 
-    path = Path(dataroot) / 'data' / 'SVHN'
+    path = Path(dataroot) / 'SVHN'
     train_dataset = datasets.SVHN(path, split='train',
                                   transform=transform,
                                   # target_transform=one_hot_encode,

@@ -262,6 +262,8 @@ if args.resume is not None:
     del checkpt
     del state
 
+model.eval()
+
 fixed_z = standard_normal_sample([min(32, args.batchsize), (im_dim + args.padding) * args.imagesize * args.imagesize]).to(device)
 
 utils.makedirs(os.path.join(args.save, 'imgs'))
@@ -317,84 +319,100 @@ test_dataloader_cifar = torch.utils.data.DataLoader(test_cifar, batch_size=32, n
 train_dataloader_svhn = torch.utils.data.DataLoader(train_svhn, batch_size=32, num_workers=0, pin_memory=True)
 test_dataloader_svhn = torch.utils.data.DataLoader(test_svhn, batch_size=32, num_workers=0, pin_memory=True)
 
-num_noise_datapoints = 32
+minibatch_size = 25
+num_batches = 400
 
 # Gaussian
 gaussian_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('Gaussian batch {}'.format(batch_num))
     with torch.no_grad():
-        gaussian_data = np.clip(.5 + np.random.normal(size=(num_noise_datapoints, 3, 32, 32)), a_min=0.01, a_max=0.99)
+        gaussian_data = np.clip(.5 + np.random.normal(size=(minibatch_size, 3, 32, 32)), a_min=0.01, a_max=0.99)
         gaussian_data = torch.from_numpy(gaussian_data).float()
         gaussian_data = gaussian_data.cuda()
         z, logpx = model(gaussian_data, 0)
         recons = model(z, inverse=True)
 
+    gaussian_recons_errs += [torch.norm(x_hat - x).item() for (x_hat, x) in zip(recons, gaussian_data)]
     save_samples(gaussian_data, 'gaussian_orig')
     save_samples(recons, 'gaussian_recons')
 
-    gaussian_recons_errs += [torch.norm(x_hat - x).item() for (x_hat, x) in zip(recons, gaussian_data)]
 print('Gaussian rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(gaussian_recons_errs), np.min(gaussian_recons_errs), np.max(gaussian_recons_errs)))
 sys.stdout.flush()
 
 # Uniform
 uniform_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('Uniform batch {}'.format(batch_num))
     with torch.no_grad():
-        uniform_data = np.clip(np.random.uniform(size=(num_noise_datapoints, 3, 32, 32)), a_min=0.01, a_max=0.99)
+        uniform_data = np.clip(np.random.uniform(size=(minibatch_size, 3, 32, 32)), a_min=0.01, a_max=0.99)
         uniform_data = torch.from_numpy(uniform_data).float()
         uniform_data = uniform_data.cuda()
         z, logpx = model(uniform_data, 0)
         recons = model(z, inverse=True)
+
     uniform_recons_errs += [torch.norm(x_hat - x).item() for (x_hat, x) in zip(recons, uniform_data)]
+    save_samples(uniform_data, 'uniform_orig_{}'.format(batch_num))
+    save_samples(recons, 'uniform_recons_{}'.format(batch_num))
+
 print('Uniform rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(uniform_recons_errs), np.min(uniform_recons_errs), np.max(uniform_recons_errs)))
 sys.stdout.flush()
 
 # Rademacher
 rademacher_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('Rademacher batch {}'.format(batch_num))
     with torch.no_grad():
-        rademacher_data = np.random.binomial(1, .5, size=(num_noise_datapoints, 3, 32, 32))
+        rademacher_data = np.random.binomial(1, .5, size=(minibatch_size, 3, 32, 32))
         rademacher_data = torch.from_numpy(rademacher_data).float()
         rademacher_data = rademacher_data.cuda()
         z, logpx = model(rademacher_data, 0)
         recons = model(z, inverse=True)
+
     rademacher_recons_errs += [torch.norm(x_hat - x).item() for (x_hat, x) in zip(recons, rademacher_data)]
+    save_samples(rademacher_data, 'rademacher_orig_{}'.format(batch_num))
+    save_samples(recons, 'rademacher_recons_{}'.format(batch_num))
+
 print('Rademacher rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(rademacher_recons_errs), np.min(rademacher_recons_errs), np.max(rademacher_recons_errs)))
 sys.stdout.flush()
 
 # Texture OOD Data
 texture_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('Texture batch {}'.format(batch_num))
     with torch.no_grad():
         texture_data = torch.load(os.path.join('../ood_data/dtd.t7')).numpy() / 255.0
         texture_data = torch.from_numpy(texture_data).float()
-        # texture_data = texture_data[:32].cuda()  # Just taking one minibatch here
-        texture_data = texture_data[batch_num*32:batch_num*32+32].cuda()  # Just taking one minibatch here
+        texture_data = texture_data[batch_num*minibatch_size:batch_num*minibatch_size+minibatch_size].cuda()  # Just taking one minibatch here
         z, logpx = model(texture_data, 0)
         recons = model(z, inverse=True)
+
     texture_recons_errs += [torch.norm(x_hat - x).item() for (x_hat, x) in zip(recons, texture_data)]
+    save_samples(texture_data, 'texture_orig_{}'.format(batch_num))
+    save_samples(recons, 'texture_recons_{}'.format(batch_num))
+
 print('Texture rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(texture_recons_errs), np.min(texture_recons_errs), np.max(texture_recons_errs)))
 sys.stdout.flush()
 
 # Places OOD Data
 places_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('Places batch {}'.format(batch_num))
     with torch.no_grad():
         places_data = torch.load(os.path.join('../ood_data/places.t7')).numpy() / 255.
         places_data = torch.from_numpy(places_data).float()
-        places_data = places_data[batch_num*32:batch_num*32+32].cuda()  # Just taking one minibatch here
+        places_data = places_data[batch_num*minibatch_size:batch_num*minibatch_size+minibatch_size].cuda()  # Just taking one minibatch here
         z, logpx = model(places_data, 0)
         recons = model(z, inverse=True)
+
     places_recons_errs += [torch.norm(x_hat - x).item() for (x_hat, x) in zip(recons, places_data)]
+    save_samples(places_data, 'places_orig_{}'.format(batch_num))
+    save_samples(recons, 'places_recons_{}'.format(batch_num))
+
 print('Places rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(places_recons_errs), np.min(places_recons_errs), np.max(places_recons_errs)))
 sys.stdout.flush()
@@ -404,17 +422,19 @@ tim_resize_data = datasets.ImageFolder('../ood_data/Imagenet_resize', transform=
 tim_resize_data = np.stack([img.numpy() for (img, label) in tim_resize_data])
 
 tim_resized_recons_errs = []
-for batch_num in range(50):
+for batch_num in range(num_batches):
     print('tinyImageNet batch {}'.format(batch_num))
-    tim_resize_minibatch = torch.from_numpy(tim_resize_data[batch_num*32:batch_num*32+32]).float()  # Range is [0, 1]
+    tim_resize_minibatch = torch.from_numpy(tim_resize_data[batch_num*minibatch_size:batch_num*minibatch_size+minibatch_size]).float()  # Range is [0, 1]
     tim_resize_minibatch = tim_resize_minibatch.cuda()
 
     with torch.no_grad():
         z, logpx = model(tim_resize_minibatch, 0)
         recons = model(z, inverse=True)
+
     tim_resized_recons_errs += [torch.norm(x_hat - x).item() for (x_hat, x) in zip(recons, tim_resize_minibatch)]
     save_samples(tim_resize_minibatch, 'tim_resized_orig_{}'.format(batch_num))
     save_samples(recons, 'tim_resized_recons_{}'.format(batch_num))
+
 print('tinyImageNet-resized rec | mean: {:6.4e} | min: {:6.4e} | max: {:6.4e}'.format(
        np.mean(tim_resized_recons_errs), np.min(tim_resized_recons_errs), np.max(tim_resized_recons_errs)))
 sys.stdout.flush()
